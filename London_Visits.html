@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>London Visits</title>
+<style>
+body{margin:0;font-family:Segoe UI;background:linear-gradient(180deg,#061321,#0d2136);color:white;min-height:100vh;}
+header{background:#c8102e;padding:20px;font-size:34px;font-weight:bold;text-align:center;letter-spacing:4px;box-shadow:0 0 20px rgba(0,0,0,.4);}
+.container{max-width:1000px;margin:auto;padding:30px;}
+.card{background:rgba(255,255,255,.08);backdrop-filter:blur(10px);border-radius:20px;padding:20px;}
+input{width:100%;padding:15px;border:none;border-radius:10px;font-size:16px;box-sizing:border-box;}
+.suggestion{padding:12px;margin-top:6px;background:rgba(255,255,255,.08);border-radius:10px;cursor:pointer;}
+.suggestion:hover{background:rgba(255,255,255,.15);}
+button{margin-top:15px;padding:12px 20px;background:#c8102e;border:none;color:white;border-radius:10px;cursor:pointer;}
+.visit{padding:12px;margin-top:8px;background:rgba(255,255,255,.08);border-radius:10px;}
+h2{margin-top:0;}
+</style>
+</head>
+<body>
+
+<audio id="bgMusic" loop>
+    <source src="music.mp3" type="audio/mpeg">
+</audio>
+
+<header>🇬🇧 LONDON VISITS</header>
+
+<div class="container">
+<div class="card">
+<h2>Adicionar Local</h2>
+<input id="search" placeholder="Digite um lugar, palavra-chave ou tema..." autocomplete="off">
+<div id="suggestions"></div>
+<button onclick="savePlace()">Salvar Visita</button>
+</div>
+
+<br>
+
+<div class="card">
+<h2>Locais Salvos</h2>
+<div id="visits"></div>
+</div>
+</div>
+
+<script>
+const API_URL = "SUA_URL_AQUI";
+
+let locais = [];
+let selected = null;
+
+fetch("list.txt")
+.then(r=>r.text())
+.then(text=>{
+locais = text.split("\n").filter(x=>x.trim());
+});
+
+const search = document.getElementById("search");
+
+search.addEventListener("input",()=>{
+const termo = search.value.toLowerCase();
+const box = document.getElementById("suggestions");
+box.innerHTML="";
+selected = null;
+
+if(!termo) return;
+
+locais.forEach(item=>{
+if(item.toLowerCase().includes(termo)){
+const div = document.createElement("div");
+div.className = "suggestion";
+div.textContent = item;
+
+div.onclick=()=>{
+selected = item;
+search.value = item;
+box.innerHTML="";
+};
+
+box.appendChild(div);
+}
+});
+});
+
+async function savePlace(){
+if(!selected){
+alert("Escolha uma sugestão.");
+return;
+}
+
+await fetch(API_URL,{
+method:"POST",
+body:JSON.stringify({lugar:selected})
+});
+
+loadVisits();
+search.value="";
+selected=null;
+}
+
+async function loadVisits(){
+const res = await fetch(API_URL);
+const data = await res.json();
+
+const box = document.getElementById("visits");
+box.innerHTML="";
+
+data.forEach(item=>{
+box.innerHTML += `<div class="visit">${item.lugar}</div>`;
+});
+}
+
+loadVisits();
+
+const bgMusic = document.getElementById("bgMusic");
+bgMusic.volume = 0.1;
+
+document.addEventListener("click", () => {
+    if(bgMusic.paused){
+        bgMusic.play();
+    }
+}, { once:true });
+</script>
+
+</body>
+</html>
